@@ -10,17 +10,15 @@ module.exports = {
       context.customerAccountsDataSource.find({ "customerId": parseInt(customerId) }).then((customerAccounts) => 
         customerAccounts.map((customerAccount) => mapCurrentAccount(customerAccount))
       ),
-    customerAccount: (_, { id }, context) =>
-      context.customerAccountsDataSource.find({"_id": id}).then((customerAccounts) => 
+    customerAccount: (_, { id }, context) => 
+      context.customerAccountsDataSource.findById(id).then((customerAccounts) => 
         customerAccounts.map((customerAccount) => mapCurrentAccount(customerAccount))
-      ),
+      )
   },
   CustomerAccount: {
-    account: (customerAccount, __, context) => {
-      return context.accountsDataSource.find({"accountId": customerAccount.accountId}).then((account) => {
-        var mapped = mapAccount(account[0])
-        return mapped
-      })
-    }
+    account: (customerAccount, __, context) => 
+      context.accountsDataSource.find({"accountId": customerAccount.accountId}).then((accounts) => 
+        accounts.map((account) => mapAccount(account))
+      )
   }
 }

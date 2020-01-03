@@ -1,5 +1,6 @@
 const { DataSource } = require('apollo-datasource')
 const assert = require('assert')
+const ObjectID  = require('mongodb').ObjectID
 
 class MongoDBDataSource extends DataSource {
 
@@ -19,7 +20,14 @@ class MongoDBDataSource extends DataSource {
   }
 
   async find(query) {
+    console.log({query})
     const docs = await this.collection.find(query).toArray()
+    return docs
+  }
+
+  async findById(id) {
+    const o_id = new ObjectID(id)
+    const docs = await this.collection.find({"_id": o_id}).toArray()
     return docs
   }
 }

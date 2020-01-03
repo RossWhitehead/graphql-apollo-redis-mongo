@@ -16,9 +16,11 @@ docker-compose up
 
 Apollo GraphQL service
 
-#### schema/schema.js
+#### Schema
 The GraphQL schema is defined as follows:
 ``` javascript
+// schemas/schema.js 
+
   type Query {
     accounts: [Account]
     customersAccounts(customerId: ID!): [CustomerAccount]
@@ -61,12 +63,19 @@ Thus the following queries are supported:
 
 ``` json
 {
-  accounts {
+  customersAccounts(customerId: 1) {
     id,
+    customerId,
+    identification
     accountId,
-    accountType,
-    accountSubType,
-    description
+    account {
+      id,
+      accountId,
+      accountType,
+      accountSubType,
+      description
+    },
+    balance
   }
 }
 ```
@@ -74,14 +83,47 @@ Thus the following queries are supported:
 
 ``` json
 {
-  accounts {
+  customerAccount(id: "5e0f33d702c18e5331e8267b") {
     id,
+    customerId,
+    identification
     accountId,
-    accountType,
-    accountSubType,
-    description
+    account {
+      id,
+      accountId,
+      accountType,
+      accountSubType,
+      description
+    },
+    balance
   }
 }
+```
+#### Resolvers
+Each query has a resolver. And additionally, there is a resolver for the CustomerAccount.account field, which overrides the null value that is returned by default.
+``` javascript
+// resolvers/resolvers.js
+
+Query: {
+  accounts: (_, __, context) => 
+    context.accountsDataSource.findAll().then((accounts) => 
+      accounts.map((account) => mapAccount(account))
+    ),
+  customersAccounts: (_, { customerId }, context) => 
+    context.customerAccountsDataSource.find({ "customerId": parseInt(customerId) }).then((customerAccounts) => 
+      customerAccounts.map((customerAccount) => mapCurrentAccount(customerAccount))
+    ),
+  customerAccount: (_, { id }, context) => 
+    context.customerAccountsDataSource.findById(id).then((customerAccounts) => 
+      customerAccounts.map((customerAccount) => mapCurrentAccount(customerAccount))
+    )
+},
+CustomerAccount: {
+  account: (customerAccount, __, context) => 
+    context.accountsDataSource.find({"accountId": customerAccount.accountId}).then((accounts) => 
+      accounts.map((account) => mapAccount(account))
+    )
+  }
 ```
 
 ### MongoDB
