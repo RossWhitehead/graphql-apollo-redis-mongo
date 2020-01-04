@@ -21,11 +21,13 @@ http://localhost:4000
 #### Index.js
 Uses the MongoDB node.js client SDK to connect to the MongoDB service.
 
-The MongoDB client contain retry functionality which re-establishes a connection if an open connection fails. But if there is a failure in initializing a connection then rather than retrying the MongoDB client throws and error. 
+The MongoDB client contain retry functionality which re-establishes a connection if an open connection fails. But if there is a failure in initializing a connection then rather than retrying the MongoDB client throws an error. 
 
 For this demo, in the docker-compose file the accounts service depends on the mongo service. This will ensure that the mongo service is healthy prior to the accounts service being created. However, there is no guarantee that the mongo banking database has been initalised and is ready. To accomodate this, I have used the promise-retry library to retry initializing the client connection until successfull.
 
 ```
+// index.js
+
   const connect = (url) => {
     return promiseRetry((retry, number) => {
       console.log(`MongoClient connecting to ${url} - retry number: ${number}`)
@@ -38,6 +40,37 @@ For this demo, in the docker-compose file the accounts service depends on the mo
     ...
   })
 ```
+
+Subsequent to the MongoDB connection being established the Apollo GraphQL server is initialized as follows.
+
+```
+// index.js
+
+    const db = client.db(MONGO_DB)
+
+    const accountsCollection = db.collection(MONGO_ACCOUNTS)
+    const customerAccountsCollection = db.collection(MONGO_CUSTOMER_ACCOUNTS)
+
+    const context = () => ({
+      accountsDataSource: new MongoDBDataSource(accountsCollection),
+      customerAccountsDataSource: new MongoDBDataSource(customerAccountsCollection)
+    })
+
+    const server = new ApolloServer({ 
+      typeDefs,
+      resolvers,  
+      cache: new RedisCache({
+        host: REDIS_HOST,
+      }),
+      context
+    })
+
+    server.listen().then(({url}) => {
+      console.log(`🚀 Server ready at ${url}`) 
+    })
+
+```
+Of note is the context which contains references to the data sources. If is a function that creates new instances of the data-sources. If does not return existing instances and this is important in that the data sources are initialized by the Apollo server with user-specific configuration. So new data sources are created for each user request. This is partly the reason why an existng MongoDB client connection is passed into the data sources. We would not want a connection to be established for each concurrent user.
 
 #### Schema
 The GraphQL schema is defined as follows:
@@ -71,7 +104,7 @@ Thus the following queries are supported:
 
 #####  Get list of accounts
 
-``` json
+``` 
 {
   accounts {
     id,
@@ -84,7 +117,7 @@ Thus the following queries are supported:
 ```
 #####  Get customer's accounts
 
-``` json
+``` 
 {
   customersAccounts(customerId: 1) {
     id,
@@ -104,7 +137,7 @@ Thus the following queries are supported:
 ```
 #####  Get customer account
 
-``` json
+``` 
 {
   customerAccount(id: "5e0f33d702c18e5331e8267b") {
     id,
@@ -153,6 +186,8 @@ I have a created a MongoDB data-source class, datasources/mongodb-datasource.Mon
 
 The class extends the apollo-datasource.DataSource class, and utilises the MongoDB node.js client SDK in implementing the following methods:
 ```
+// dataosuurces/mongodb-datasource.js 
+
  async findAll() {
     const docs = await this.collection.find({}).toArray()
     return docs
