@@ -2,6 +2,7 @@
 
 const { ApolloServer } = require('apollo-server')
 const { RedisCache } = require('apollo-server-cache-redis')
+const responseCachePlugin = require('apollo-server-plugin-response-cache')
 const MongoClient = require('mongodb').MongoClient
 const promiseRetry = require('promise-retry')
 require('dotenv').config()
@@ -34,6 +35,7 @@ function main() {
   }
   
   const connect = (url) => {
+    console.log({ url })
     return promiseRetry((retry, number) => {
       console.log(`MongoClient connecting to ${url} - retry number: ${number}`)
       return MongoClient.connect(url, connectOptions).catch(retry)
@@ -54,13 +56,17 @@ function main() {
       customerAccountsDataSource: new MongoDBDataSource(customerAccountsCollection)
     })
 
-    const server = new ApolloServer({ 
+    const server = new ApolloServer({
       typeDefs,
-      resolvers,  
+      resolvers,
+      cacheControl: {
+        defaultMaxAge: 5
+      },
       cache: new RedisCache({
-        host: REDIS_HOST,
+        host: REDIS_HOST
       }),
-      context
+      plugins: [responseCachePlugin()],
+      context: context
     })
 
     server.listen().then(({url}) => {

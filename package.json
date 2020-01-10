@@ -12,6 +12,7 @@
   "dependencies": {
     "apollo-server": "^2.9.14",
     "apollo-server-cache-redis": "^1.1.4",
+    "apollo-server-plugin-response-cache": "^0.3.11",
     "dotenv": "^8.2.0",
     "mongodb": "^3.4.1",
     "promise-retry": "^1.1.1"
