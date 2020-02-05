@@ -3,8 +3,6 @@ As it says on the tin -
 
 A GraphQL Apollo service, sourcing data from MongoDB, and caching data in Redis.
 
-> Status: Can't see anything being cached in Redis. Need to work this through.
-
 ## Build and run
 ```
 docker-compose up
