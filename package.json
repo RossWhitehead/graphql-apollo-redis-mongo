@@ -10,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "apollo-server": "^2.9.14",
+    "apollo-server": "^2.14.2",
     "apollo-server-cache-redis": "^1.1.4",
     "apollo-server-plugin-response-cache": "^0.3.11",
     "dotenv": "^8.2.0",
